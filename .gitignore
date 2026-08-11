@@ -1,1 +1,16 @@
-# --- NEXUSLOB PRODUCTION GITIGNORE ---echo .vs/echo out/echo build/echo CMakeSettings.jsonecho CompilerIdCXX/echo data/*.binecho data/*.csvecho *.exeecho *.objecho *.pdbecho *.ilk
+# --- NEXUSLOB PRODUCTION GITIGNORE ---
+.vs/
+out/
+build/
+CMakeSettings.json
+CompilerIdCXX/
+
+# Binary and Build Artifacts
+*.exe
+*.obj
+*.pdb
+*.ilk
+
+# --- DEMO DATA RULES ---
+# Ignore everything inside the data directory
+data/
