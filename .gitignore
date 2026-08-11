@@ -1,0 +1,1 @@
+# --- NEXUSLOB PRODUCTION GITIGNORE ---echo .vs/echo out/echo build/echo CMakeSettings.jsonecho CompilerIdCXX/echo data/*.binecho data/*.csvecho *.exeecho *.objecho *.pdbecho *.ilk
