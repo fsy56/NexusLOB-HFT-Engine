@@ -106,7 +106,7 @@ namespace nexus::core {
 	private:
 		union Node {
 			Node* next_free;
-			alignas(T) char storage_space[sizeof(T)];
+			alignas(T) std::byte storage_space[sizeof(T)];
 		};
 
 		alignas(CACHE_LINE_SIZE) std::array<typename std::aligned_storage<sizeof(T), alignof(T)>::type, Capacity> m_storage;

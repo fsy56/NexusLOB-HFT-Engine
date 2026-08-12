@@ -60,7 +60,7 @@ namespace nexus::core {
 
 	private:
 		struct Node {
-			alignas(alignof(T)) char storage[sizeof(T)];
+			alignas(alignof(T)) std::byte storage[sizeof(T)];
 		};
 
 		static constexpr std::size_t BUFFER_MASK = Capacity - 1;
