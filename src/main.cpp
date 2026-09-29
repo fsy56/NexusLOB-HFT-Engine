@@ -27,7 +27,7 @@ int main() {
 
 			// Deduce the script location dynamically relative to the running application directory
 			fs::path root_dir = fs::current_path();
-			while (root_dir.has_parent_path() && root_dir.filename() != "nexus_lob") {
+			while (root_dir.has_parent_path() && root_dir.filename() != "nexus_lob" && root_dir.filename() != "NexusLOB-HFT-Engine") {
 				root_dir = root_dir.parent_path();
 			}
 
@@ -39,7 +39,11 @@ int main() {
 			}
 
 			std::cout << "[+] Script verified at: " << script_path.string() << "\n";
+#ifdef _WIN32
 			std::string execution_command = "python \"" + script_path.string() + "\"";
+#else
+			std::string execution_command = "python3 \"" + script_path.string() + "\"";
+#endif
 
 			// Dispatch execution to the Python runtime engine
 			int env_status = std::system(execution_command.c_str());

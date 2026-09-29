@@ -15,7 +15,8 @@
 #include <immintrin.h> 
 #define NEXUS_SPIN_HINT() _mm_pause() // Directly invokes x64 PAUSE to optimize core instruction port sharing
 #else
-#define NEXUS_SPIN_HINT() std::this_thread::hint_spin_loop()
+#include <x86intrin.h>
+#define NEXUS_SPIN_HINT() _mm_pause()
 #endif
 
 namespace nexus::engine {
@@ -45,7 +46,7 @@ namespace nexus::engine {
                 return false;
             }
 
-            m_ingestion_complete.store(false, std::memory_order::memory_order_relaxed);
+            m_ingestion_complete.store(false, std::memory_order::relaxed);
 
             m_consumer_thread = std::thread(&EngineDriver::run_backtest_loop, this);
             m_producer_thread = std::thread(&EngineDriver::run_ingestion_loop, this);
@@ -77,7 +78,7 @@ namespace nexus::engine {
                     NEXUS_SPIN_HINT();
                 }
             }
-            m_ingestion_complete.store(true, std::memory_order::memory_order_release);
+            m_ingestion_complete.store(true, std::memory_order::release);
         }
 
         void run_backtest_loop() noexcept {
@@ -115,7 +116,7 @@ namespace nexus::engine {
                     }
                 }
                 else {
-                    if (m_ingestion_complete.load(std::memory_order::memory_order_acquire) && m_queue->size() == 0) {
+                    if (m_ingestion_complete.load(std::memory_order::acquire) && m_queue->size() == 0) {
                         break;
                     }
                     NEXUS_SPIN_HINT();

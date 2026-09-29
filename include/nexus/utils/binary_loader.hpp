@@ -5,10 +5,17 @@
 #include <string>
 #include <string_view>
 
+#ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN // Excludes unused Windows APIs to maximize compiler throughput
+#define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
+#else
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 namespace nexus::utils {
 
@@ -26,6 +33,7 @@ namespace nexus::utils {
         bool load(const std::string& bin_path) noexcept {
             unload(); // Clear any pre-existing mapped allocations
 
+#ifdef _WIN32
             // 1. Establish low-overhead Windows native file handle
             m_file_handle = CreateFileA(bin_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
             if (m_file_handle == INVALID_HANDLE_VALUE) return false;
@@ -45,13 +53,34 @@ namespace nexus::utils {
             if (view == nullptr) { close_handles(); return false; }
 
             m_data_ptr = static_cast<FXTick*>(view);
+#else
+            // 1. Establish low-overhead file descriptor
+            m_fd = ::open(bin_path.c_str(), O_RDONLY);
+            if (m_fd == -1) return false;
+
+            // 2. Measure file size using kernel stat models
+            struct stat sb;
+            if (::fstat(m_fd, &sb) == -1) { close_handles(); return false; }
+            m_total_bytes = static_cast<size_t>(sb.st_size);
+            if (m_total_bytes == 0) { close_handles(); return false; }
+
+            // 3. Project the file bits directly into the process memory segment using mmap
+            void* view = ::mmap(nullptr, m_total_bytes, PROT_READ, MAP_SHARED, m_fd, 0);
+            if (view == MAP_FAILED) { close_handles(); return false; }
+
+            m_data_ptr = static_cast<FXTick*>(view);
+#endif
             m_tick_count = m_total_bytes / sizeof(FXTick);
             return true;
         }
 
         void unload() noexcept {
             if (m_data_ptr != nullptr) {
+#ifdef _WIN32
                 UnmapViewOfFile(m_data_ptr);
+#else
+                ::munmap(m_data_ptr, m_total_bytes);
+#endif
                 m_data_ptr = nullptr;
             }
             close_handles();
@@ -65,15 +94,23 @@ namespace nexus::utils {
 
     private:
         void close_handles() noexcept {
+#ifdef _WIN32
             if (m_mapping_handle != nullptr) { CloseHandle(m_mapping_handle); m_mapping_handle = nullptr; }
             if (m_file_handle != INVALID_HANDLE_VALUE) { CloseHandle(m_file_handle); m_file_handle = INVALID_HANDLE_VALUE; }
+#else
+            if (m_fd != -1) { ::close(m_fd); m_fd = -1; }
+#endif
         }
 
         FXTick* m_data_ptr{ nullptr };
         size_t  m_total_bytes{ 0 };
         size_t  m_tick_count{ 0 };
+#ifdef _WIN32
         HANDLE  m_file_handle{ INVALID_HANDLE_VALUE };
         HANDLE  m_mapping_handle{ nullptr };
+#else
+        int     m_fd{ -1 };// Linux native File Descriptor
+#endif
     };
 
 } // namespace nexus::utils

@@ -35,8 +35,8 @@ if(MSVC)
     add_link_options("$<$<CONFIG:Release>:/LTCG>")
 else()
     # High-performance tracking profiles for Clang / GCC optimization models
-    add_compile_options(-O3 -march=native -flto -Wall -Wextra -Wpedantic)
-    add_link_options(-flto)
+    add_compile_options(-O3 -march=native -flto -pthread -Wall -Wextra -Wpedantic)
+    add_link_options(-flto -pthread)
 endif()
 
 # Bind headers and tracking parameters inside executable generation structures
